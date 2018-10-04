@@ -1,6 +1,9 @@
+from __future__ import print_function
+
+import sys
 import numpy as np
 from bisect import bisect_left
-
+from time import time
 # import logging
 
 from ._lapjv import _lapmod, FP_DYNAMIC_ as FP_DYNAMIC, LARGE_ as LARGE
@@ -271,7 +274,7 @@ def get_cost(n, cc, ii, kk, x0):
 
 
 def lapmod(n, cc, ii, kk, fast=True, return_cost=True,
-           fp_version=FP_DYNAMIC):
+           fp_version=FP_DYNAMIC, maximize=True):
     """Solve sparse linear assignment problem using Jonker-Volgenant algorithm.
 
     n: number of rows of the assignment cost matrix
@@ -301,7 +304,15 @@ def lapmod(n, cc, ii, kk, fast=True, return_cost=True,
 
     if fast is True:
         # log.debug('[----CR & RT & ARR & augmentation ----]')
-        x, y = _lapmod(n, cc, ii, kk, fp_version=fp_version)
+        max_cost = max(cc)
+        if maximize:
+            cc_ = max_cost - cc
+        else:
+            cc_ = cc
+        
+        t = time()
+        x, y = _lapmod(n, cc_, ii, kk, max_cost=max_cost, fp_version=fp_version)
+        print('_lapmod time', time() - t, file=sys.stderr)
     else:
         cc = np.ascontiguousarray(cc, dtype=np.float64)
         ii = np.ascontiguousarray(ii, dtype=np.int32)
@@ -335,6 +346,7 @@ def lapmod(n, cc, ii, kk, fast=True, return_cost=True,
         # log.info('[----Augmentation----]')
         _pya(n, cc, ii, kk, n_free_rows, free_rows, x, y, v)
         # log.debug('x, y, v: %s %s %s', x, y, v)
+    
     if return_cost is True:
         return get_cost(n, cc, ii, kk, x), x, y
     else:

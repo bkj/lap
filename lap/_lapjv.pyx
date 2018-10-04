@@ -26,7 +26,8 @@ cdef extern from "lapjv.h" nogil:
             uint_t *kk,
             int_t *x,
             int_t *y,
-            fp_t fp_version)
+            fp_t fp_version,
+            double max_cost)
 
 LARGE_ = LARGE
 FP_1_ = FP_1
@@ -124,6 +125,7 @@ def _lapmod(
         cnp.ndarray cc not None,
         cnp.ndarray ii not None,
         cnp.ndarray kk not None,
+        const double max_cost,
         fp_t fp_version=FP_DYNAMIC):
     """Internal function called from lapmod(..., fast=True)."""
     cdef cnp.ndarray[cnp.double_t, ndim=1, mode='c'] cc_c = \
@@ -136,10 +138,10 @@ def _lapmod(
         np.empty((n,), dtype=np.int32)
     cdef cnp.ndarray[int_t, ndim=1, mode='c'] y_c = \
         np.empty((n,), dtype=np.int32)
-
+    
     cdef int_t ret = lapmod_internal(
                 n, &cc_c[0], &ii_c[0], &kk_c[0],
-                &x_c[0], &y_c[0], fp_version)
+                &x_c[0], &y_c[0], fp_version, max_cost)
     if ret != 0:
         if ret == -1:
             raise MemoryError('Out of memory.')
